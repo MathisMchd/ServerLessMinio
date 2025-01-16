@@ -39,12 +39,12 @@ app.post('/upload', upload.single('file'), (req, res) => {
 
         minioClient.fPutObject(process.env.MINIO_BUCKET, fileName, filePath, (err) => {
             if (err) {
-                console.log("Erreur lors du chargement du fichier", err);
-                return res.status(500).send("Erreur lors du chargement du fichier");
+                console.log("Erreur lors du chargement du fichier", fileName);
+                return res.status(500).send({ error: `Erreur lors du chargement du fichier ${fileName}`, details: err });
             }
             fs.unlinkSync(filePath);
 
-            return res.status(200).send("Le fichier a été uploader avec succes")
+            return res.status(200).send({ message: `Le fichier ${fileName} été chargé avec succes.` })
         })
 
     }
@@ -63,7 +63,8 @@ app.get('/download/:filename', (req, res) => {
 
         res.download(localFilePath, fileName, (err) => {
             if (err) {
-                console.error('Erreur lors de l’envoi du fichier:', err);
+                console.error('Erreur lors de l’envoi du fichier:', fileName);
+                return res.status(500).json({ error: 'Echec du téléchargement', details: err });
             }
             fs.unlinkSync(localFilePath);
         });
@@ -72,17 +73,20 @@ app.get('/download/:filename', (req, res) => {
 
 // Route de suppression
 app.delete('/delete/:filename', (req, res) => {
-    // Supprimer l'objet dans MinIO s'il existe
 
-    const fileName = req.params.filename; // Récupère le nom du fichier depuis l'URL
+    const fileName = req.params.filename;
 
-    minioClient.removeObject(process.env.MINIO_BUCKET, objectName, (err) => {
+    minioClient.removeObject(process.env.MINIO_BUCKET, fileName, (err) => {
         if (err) {
+            console.error('Erreur lors de la suppression du fichier:', fileName);
+            return res.status(500).json({ error: 'Echec de la suppression du fichier', details: err });
 
         }
+        console.log("Suppression du fichier réussie.")
+        return res.status(200).json({ message: `Fichier '${fileName}' supprimé avec succès` });
+
     });
 
-    return res.status(200).json({ message: `Fichier '${objectName}' supprimé avec succès` });
 });
 
 // Lancer le serveur
