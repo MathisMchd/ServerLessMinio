@@ -1,0 +1,7 @@
+
+node_modules/
+uploads/
+downloads/
+minio-data/
+*.pdf
+.env
